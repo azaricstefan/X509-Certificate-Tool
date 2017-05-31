@@ -14,7 +14,7 @@ Korisni linkovi:
 
 FAQ:
 
-#ЗП Је ли ко користио
+1. #ЗП Је ли ко користио
 JcaContentSignerBuilder да потпише сертификтате и је ли му ради за RIPEMDxxxwithRSA?
 Ђорђе Живановић Jovan Djukicево решење:
 static 
@@ -29,16 +29,15 @@ Nikola Miljkovic u odredjenim funkcijama ima paramatera za provider gde se kao s
 Ђорђе Живановић Ј**и га сад. 😂 Ово ти решава све те двосмислене проблеме. Јер сигурно још негде ће се појавити.
 
 
-#ЗП enabledKeyIdentifiers, чему служи ?
+2. #ЗП enabledKeyIdentifiers, чему служи ?
 Dohvata vrednost onog checkboxa iz GUI-ja za key identifiers, ako je to ono sto mislim, proveri.
 Pa sluzi da odlucis da li da dodas tu ekstenziju ili ne. Dodajes samo ako je true.
 
-[#ZP projekat] Je l' neko probao issuer alternative name da doda? I je l' prolazi javni test kad to doda?
+3. [#ZP projekat] Je l' neko probao issuer alternative name da doda? I je l' prolazi javni test kad to doda?
 Aleksa Mitrovic: Meni baca error: Certificate contains unsupported critical extensions: [2.5.29.18] - sto je issuer alternative name...
 Čukanović resio - ne podrzava ako stavite critical na true...
 
-[ZP] Da li je neko uspeo da upise x400Address u Subject/issuer alternative names?
-
+4. [ZP] Da li je neko uspeo da upise x400Address u Subject/issuer alternative names?
 Mihailo Petric Da li si probao gn = new GeneralName(GeneralName.x400Address, new X500Name("C=....,ST=..."))
 napravis niz GeneralNames[] i to prosledis addExtension kao ASN1Encodable ?
 Stevan Ognjanovic
@@ -46,14 +45,14 @@ Stevan Ognjanovic Nisam to probao, nesto drugo jesam pa je puklo u konstruktoru.
 Mihailo Petric
 Mihailo Petric za othername mi je nesto cudno pisalo u sertifikatu. Koristio sam DERIA5String(String). Ja i dalje nisam siguran sta sve moze da se prosledi kod subject/issuer name, ali ono sto sam ja gledao u raznim sertifikatima po netu to je uvek dns.
 
-#ZP #projekat za EC algoritam - kako se implementira Set i Curve sa sve one opcije sa GUI-ja?
+5. #ZP #projekat za EC algoritam - kako se implementira Set i Curve sa sve one opcije sa GUI-ja?
 Branislava Ivković ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(access.getPublicKeyECCurve());
 Milica Stanković To je iz Bouncy Castle?
 Branislava Ivković Da. Moze i u obicnoj Javi da se koristi to ime curve-a za generisanje kljuceva, ali cini mi se da meni nije radilo za sve one iz GUI-ja, pa sam zato presla na ovo.
 Milica Stanković Hvala puno :)
 Branislava Ivković Set sluzi samo da promeni sta se nalazi u drop down meniju za curve.
 
-#ЗП Је ли зна неко како да се дохвати issuer alterantive name?
+6. #ЗП Је ли зна неко како да се дохвати issuer alterantive name?
 Пошто ова метода getAlternativeName увек враћа низ стрингова величине 0.
 getAlternativeName(6)
 
