@@ -3,24 +3,16 @@ package implementation;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.KeyPair;
+import java.security.*;
+import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.List;
 
 
 import code.GuiException;
+import implementation.Beans.CertificateSubject;
 import x509.v3.CodeV3;
 
-import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyPairGeneratorSpi;
-import org.bouncycastle.jce.provider.X509CertificateObject;
-
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
@@ -30,6 +22,24 @@ public class MyCode extends CodeV3 {
             throws GuiException {
         super(algorithm_conf, extensions_conf);
         // TODO Auto-generated constructor stub
+    }
+
+    @Override
+    public Enumeration<String> loadLocalKeystore() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void resetLocalKeystore() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public boolean exportKeypair(String name, String file, String password) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     @Override
@@ -47,9 +57,10 @@ public class MyCode extends CodeV3 {
 
             Key key = keyStore.getKey(selectedAlias, password.toCharArray());
             Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
+            //chain[0].getPublicKey();
             //KeyStore ks = KeyPairsStore.getInstance();
 
-
+            //chain[0].getPublicKey();
             String passForNewProtection = "";
         } catch (UnrecoverableKeyException e) {
             // TODO Auto-generated catch block
@@ -73,86 +84,130 @@ public class MyCode extends CodeV3 {
     }
 
     @Override
-    public boolean exportCertificate(File arg0, int arg1) {
+    public boolean removeKeypair(String keypair_name) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean exportKeypair(String arg0, String arg1, String arg2) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean generateCSR(String arg0) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public String getIssuer(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getIssuerPublicKeyAlgorithm(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<String> getIssuers(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public int getRSAKeyLength(String arg0) {
+    public int loadKeypair(String keypair_name) {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public boolean importCertificate(File arg0, String arg1) {
+    public boolean saveKeypair(String keypair_name) {
+        CertificateSubject bean = getCertificateSubjectDataFromGUI();
+        KeyPair keyPair = null;
+        try {
+            keyPair = Functions.createKeyPair("RSA", Integer.parseInt(bean.getKeyLength()));
+            PublicKey PUa = keyPair.getPublic();
+            PrivateKey PRa = keyPair.getPrivate();
+            X509Certificate certificate = Functions.createCertificate(PUa, PRa, bean);
+
+            //TODO: CREATE KEY STORE IMPLEMENTATION
+            //KeyStore ks = KeyPairsStore.getInstance();
+
+            Certificate[] chain = new Certificate[1];
+            chain[0] = certificate;
+
+            //TODO: password?
+            //ks.setKeyEntry(keypair_name, PRa, passwordField.getPassword(), chain);
+
+            //TODO:
+            //KeyPairsStore.save();
+
+            access.addKeypair(keypair_name);
+
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private CertificateSubject getCertificateSubjectDataFromGUI() {
+        CertificateSubject ret = new CertificateSubject(
+                access.getSubjectCountry(),
+                access.getSubjectState(),
+                access.getSubjectLocality(),
+                access.getSubjectOrganization(),
+                access.getSubjectOrganizationUnit(),
+                access.getSubjectCommonName(),
+                access.getPublicKeySignatureAlgorithm(),
+                access.getSerialNumber(),
+                access.getPublicKeyParameter(),
+                access.getNotBefore(),
+                access.getNotAfter(),
+                access.getKeyUsage(),
+                access.getAlternativeName(6), //2 keyUsage, 6 altName, 13 issuerinhibit
+                access.getInhibitAnyPolicy()
+        );
+
+        ret.setIssuerAlternativeNameCritical(
+                access.isCritical(6) //2 keyUsage, 6 altName, 13 issuerinhibit
+        );
+
+        ret.setKeyUsageCritical(
+                access.isCritical(2) //2 keyUsage, 6 altName, 13 issuerinhibit
+        );
+
+        ret.setInhibitAndPolicyCritical(
+                access.isCritical(13) //2 keyUsage, 6 altName, 13 issuerinhibit
+        );
+        return ret;
+    }
+
+    @Override
+    public boolean exportCertificate(File file, int encoding) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
-    public int loadKeypair(String arg0) {
+    public boolean generateCSR(String keypair_name) {
         // TODO Auto-generated method stub
-        return 0;
+        return false;
     }
 
     @Override
-    public Enumeration<String> loadLocalKeystore() {
+    public String getIssuer(String arkeypair_nameg0) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean removeKeypair(String arg0) {
+    public String getIssuerPublicKeyAlgorithm(String keypair_name) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<String> getIssuers(String keypair_name) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRSAKeyLength(String keypair_name) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public boolean importCertificate(File file, String keypair_name) {
         // TODO Auto-generated method stub
         return false;
     }
 
-    @Override
-    public void resetLocalKeystore() {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
-    public boolean saveKeypair(String arg0) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean signCertificate(String arg0, String arg1) {
+    public boolean signCertificate(String issuer, String algorithm) {
         // TODO Auto-generated method stub
         return false;
     }
