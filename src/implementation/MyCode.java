@@ -2,14 +2,15 @@ package implementation;
 
 import java.io.*;
 import java.security.*;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 
 
 import code.GuiException;
 import implementation.Beans.CertificateSubject;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import x509.v3.CodeV3;
 
@@ -155,7 +156,11 @@ public class MyCode extends CodeV3 {
     public int loadKeypair(String keypair_name) {
         try {
             Key key = keyStore.getKey(keypair_name, keyStorePassword.toCharArray());
-            X509Certificate certificate =
+            Enumeration<String> aliases = keyStore.aliases();
+            String selectedAlias = aliases.nextElement();
+            Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
+            X509Certificate certificate = (X509Certificate) chain[0];
+            setCertificateSubjectDataFromKeyStore(certificate);
 
         } catch (KeyStoreException e) {
             e.printStackTrace();
@@ -163,9 +168,41 @@ public class MyCode extends CodeV3 {
             e.printStackTrace();
         } catch (UnrecoverableKeyException e) {
             e.printStackTrace();
+        } catch (CertificateParsingException e) {
+            e.printStackTrace();
         }
 
         return 0;
+    }
+
+    private void setCertificateSubjectDataFromKeyStore(X509Certificate certificate)
+            throws CertificateParsingException {
+
+        //TODO: popuniti GUI iz certificate
+        access.setSubjectCountry();
+        access.setSubjectState();
+        access.setSubjectLocality();
+        access.setSubjectOrganization();
+        access.setSubjectOrganizationUnit();
+        access.setSubjectCommonName();
+        access.setSubjectSignatureAlgorithm();
+        access.setPublicKeySignatureAlgorithm(); //treba?
+
+        access.setSerialNumber(String.valueOf(certificate.getSerialNumber()));
+        access.setPublicKeyParameter();
+        access.setNotBefore();
+        access.setNotAfter();
+        access.setKeyUsage();
+
+        String altNames;
+        Collection<List<?>> list = certificate.getSubjectAlternativeNames();
+        for (List<?> name : list) {
+            //TODO: kako se cita ova lista?!
+        }
+        access.setAlternativeName(6,altNames); //2 keyUsage, 6 altName, 13 issuerinhibit
+        access.setInhibitAnyPolicy();
+
+        //TODO: one 3 ekstenzije
     }
 
     @Override
