@@ -1,8 +1,6 @@
 package implementation;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -11,6 +9,8 @@ import java.util.List;
 
 import code.GuiException;
 import implementation.Beans.CertificateSubject;
+import org.bouncycastle.asn1.util.ASN1Dump;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import x509.v3.CodeV3;
 
 import java.security.cert.Certificate;
@@ -18,15 +18,67 @@ import java.security.cert.CertificateException;
 
 public class MyCode extends CodeV3 {
 
+    KeyStore keyStore;
+    private static final String keyStoreName = "keyStore.p12";
+    private static final String keyStoreInstanceName = "PKCS12";
+    private static final String keyStorePassword = "sifra";
+
     public MyCode(boolean[] algorithm_conf, boolean[] extensions_conf)
             throws GuiException {
         super(algorithm_conf, extensions_conf);
         // TODO Auto-generated constructor stub
     }
 
+    public void saveLocalKeyStore(){
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(keyStoreName);
+            keyStore.store(fos, keyStorePassword.toCharArray());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            if (fos != null)
+                try {fos.close();}
+                catch (IOException e) {e.printStackTrace();}
+        }
+    }
+
     @Override
     public Enumeration<String> loadLocalKeystore() {
-        // TODO Auto-generated method stub
+        FileInputStream fis = null;
+        try {
+            keyStore = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
+
+            if(!(new File(keyStoreName).exists())){
+                keyStore.load(null,null);
+            } else {
+                fis = new FileInputStream(keyStoreName);
+                keyStore.load(fis,keyStorePassword.toCharArray());
+            }
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e){
+            e.printStackTrace(); //TODO: kreirati fajl ako ne postoji
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null){
+                try { fis.close(); }
+                catch (IOException e) { e.printStackTrace(); }
+            }
+        }
         return null;
     }
 
@@ -46,22 +98,32 @@ public class MyCode extends CodeV3 {
     public boolean importKeypair(String keypair_name, String file, String password) {
         try { //TODO import keypair!
             FileInputStream fis = new FileInputStream(file);
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            KeyStore tmpKeyStore = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
+
+
+            KeyStore keyStore = KeyStore.getInstance(keyStoreInstanceName);
             keyStore.load(fis, password.toCharArray());
 
             fis.close();
-
             Enumeration<String> aliases = keyStore.aliases();
             String selectedAlias = aliases.nextElement();
 
 
             Key key = keyStore.getKey(selectedAlias, password.toCharArray());
             Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
-            //chain[0].getPublicKey();
+
+            //sad dialozi
             //KeyStore ks = KeyPairsStore.getInstance();
 
-            //chain[0].getPublicKey();
-            String passForNewProtection = "";
+            //nova sifra?
+            keyStore.setKeyEntry(selectedAlias, key, password.toCharArray(), chain);
+            //KeyPairsStore.save();
+
+            saveLocalKeyStore();
+
+            access.addKeypair(keypair_name);
+
+
         } catch (UnrecoverableKeyException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -91,7 +153,18 @@ public class MyCode extends CodeV3 {
 
     @Override
     public int loadKeypair(String keypair_name) {
-        // TODO Auto-generated method stub
+        try {
+            Key key = keyStore.getKey(keypair_name, keyStorePassword.toCharArray());
+            X509Certificate certificate =
+
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            e.printStackTrace();
+        }
+
         return 0;
     }
 
@@ -112,11 +185,11 @@ public class MyCode extends CodeV3 {
             chain[0] = certificate;
 
             //TODO: password?
-            //ks.setKeyEntry(keypair_name, PRa, passwordField.getPassword(), chain);
+            keyStore.setKeyEntry(keypair_name, PRa, keyStorePassword.toCharArray(), chain);
 
             //TODO:
             //KeyPairsStore.save();
-
+            saveLocalKeyStore();
             access.addKeypair(keypair_name);
 
         } catch (NoSuchProviderException e) {
