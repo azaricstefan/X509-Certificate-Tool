@@ -1,11 +1,10 @@
-# zp-projekat
-#ZP projekat 
+# ZP projekat 
 
-###Podesiti RUNTIME configuration: 
+### Podesiti RUNTIME configuration: 
 Program arguments: config.txt
 Main Class: X509_2017->code->X509
 
-#Korisni linkovi:
+# Korisni linkovi:
 - Dokumentacija neka siromasna https://bouncycastle.org/docs/pkixdocs1.5on/index.html
 - https://www.mayrhofer.eu.org/create-x509-certs-in-java
 - Neki projekat https://github.com/mitap94/ir3-zp-projekat/blob/master/zp-projekat/src/crypto/utils/BouncyCastleX509Builder.java
@@ -16,7 +15,7 @@ Main Class: X509_2017->code->X509
 - http://www.alvestrand.no/objectid/2.5.29.54.html
 - Used library: http://rcardon.free.fr/websign/download/api-x509-ext/be/cardon/asn1/x509/extensions/InhibitAnyPolicy.html
 
-#FAQ:
+# FAQ:
 
 1. ЗП Је ли ко користио
 JcaContentSignerBuilder да потпише сертификтате и је ли му ради за RIPEMDxxxwithRSA?
