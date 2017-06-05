@@ -2,24 +2,33 @@ package implementation;
 
 import java.io.*;
 import java.security.*;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
+import java.security.cert.*;
+import java.security.cert.Certificate;
+import java.security.cert.Extension;
+import java.util.*;
 
 
 import code.GuiException;
 import implementation.Beans.CertificateSubject;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi;
+import org.bouncycastle.jcajce.provider.keystore.pkcs12.PKCS12KeyStoreSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import sun.security.x509.InhibitAnyPolicyExtension;
 import x509.v3.CodeV3;
-
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 
 public class MyCode extends CodeV3 {
 
     KeyStore keyStore;
+    //BcKeyStoreSpi keyStore; //Da li njega koristiti?
     private static final String keyStoreName = "keyStore.p12";
     private static final String keyStoreInstanceName = "PKCS12";
     private static final String keyStorePassword = "sifra";
@@ -170,39 +179,95 @@ public class MyCode extends CodeV3 {
             e.printStackTrace();
         } catch (CertificateParsingException e) {
             e.printStackTrace();
+        } catch (CertificateEncodingException e) {
+            e.printStackTrace();
         }
 
         return 0;
     }
 
     private void setCertificateSubjectDataFromKeyStore(X509Certificate certificate)
-            throws CertificateParsingException {
+            throws CertificateParsingException, CertificateEncodingException {
+
+        JcaX509CertificateHolder certHolder = new JcaX509CertificateHolder((X509Certificate) certificate);
+        X500Name name = certHolder.getSubject();
 
         //TODO: popuniti GUI iz certificate
-        access.setSubjectCountry();
-        access.setSubjectState();
-        access.setSubjectLocality();
-        access.setSubjectOrganization();
-        access.setSubjectOrganizationUnit();
-        access.setSubjectCommonName();
-        access.setSubjectSignatureAlgorithm();
-        access.setPublicKeySignatureAlgorithm(); //treba?
+        access.setSubjectCountry(IETFUtils.valueToString(name.getRDNs(BCStyle.C)[0].getFirst().getValue()));
+        access.setSubjectState(IETFUtils.valueToString(name.getRDNs(BCStyle.ST)[0].getFirst().getValue()));
+        access.setSubjectLocality(IETFUtils.valueToString(name.getRDNs(BCStyle.L)[0].getFirst().getValue()));
+        access.setSubjectOrganization(IETFUtils.valueToString(name.getRDNs(BCStyle.O)[0].getFirst().getValue()));
+        access.setSubjectOrganizationUnit(IETFUtils.valueToString(name.getRDNs(BCStyle.OU)[0].getFirst().getValue()));
+        access.setSubjectCommonName(IETFUtils.valueToString(name.getRDNs(BCStyle.CN)[0].getFirst().getValue()));
+        access.setSubjectSignatureAlgorithm(certHolder.getSignatureAlgorithm().toString()); //TODO: PROVERA?
+        access.setPublicKeySignatureAlgorithm(certificate.getPublicKey().getAlgorithm()); //treba?
 
         access.setSerialNumber(String.valueOf(certificate.getSerialNumber()));
-        access.setPublicKeyParameter();
-        access.setNotBefore();
-        access.setNotAfter();
-        access.setKeyUsage();
+        access.setPublicKeyParameter(certificate.getPublicKey().toString()); //TODO JEL OK toString?
+        access.setNotBefore(certificate.getNotAfter());
+        access.setNotAfter(certificate.getNotAfter());
 
-        String altNames;
-        Collection<List<?>> list = certificate.getSubjectAlternativeNames();
-        for (List<?> name : list) {
-            //TODO: kako se cita ova lista?!
+        //=========GET KEY USAGE=================
+        if(certificate.getKeyUsage() != null && certificate.getKeyUsage().length != 0)
+            access.setKeyUsage(certificate.getKeyUsage()); //TODO: puca ovde
+
+        //=========GET ALTERNATIVE NAMES=========
+        String issuerAltNames = getAlternativeNames(certificate, 0);
+        if(issuerAltNames != null){
+            access.setAlternativeName(6, issuerAltNames); //5 subject AltName,6 issuerAltName, 2 keyUsage,13 issuerinhibit
         }
-        access.setAlternativeName(6,altNames); //2 keyUsage, 6 altName, 13 issuerinhibit
-        access.setInhibitAnyPolicy();
+        String subjectAltNames = getAlternativeNames(certificate,1);
+        if(subjectAltNames != null){
+            access.setAlternativeName(5, subjectAltNames);
+        }
 
-        //TODO: one 3 ekstenzije
+
+        //========GET INHIBIT ANY POLICY=========
+        ASN1Primitive prim = null;
+        String decoded = null;
+        byte[] tt = certificate.getExtensionValue("2.5.29.54");
+        if(tt != null){
+            try {
+                prim = JcaX509ExtensionUtils.parseExtensionValue(tt);
+                decoded = prim.toString();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            access.setSkipCerts(decoded);
+            access.setInhibitAnyPolicy(true);
+        }
+
+        System.out.println("READING: "+ certificate); //DEBUG
+
+    }
+
+    /**
+     *
+     * @param certificate take the info from
+     * @param what Issuer 0, Subject 1
+     * @return {@link String} allNames
+     * @throws CertificateParsingException
+     */
+    private String getAlternativeNames(X509Certificate certificate, int what)
+            throws CertificateParsingException {
+        Collection<List<?>> allNames;
+        if(what == 0)
+            allNames = certificate.getIssuerAlternativeNames();
+        else
+            allNames = certificate.getSubjectAlternativeNames();
+        String altNames;
+        //citanje imena
+        if(allNames != null) {
+            Iterator<List<?>> it = allNames.iterator();
+            StringBuilder stringBuilder = new StringBuilder();
+            while (it.hasNext()) {
+                List<?> list = it.next();
+                stringBuilder.append(list.get(1));
+            }
+            altNames = stringBuilder.toString();
+            return  altNames;
+        }
+        return null;
     }
 
     @Override
@@ -258,18 +323,17 @@ public class MyCode extends CodeV3 {
                 access.getAlternativeName(6), //2 keyUsage, 6 altName, 13 issuerinhibit
                 access.getInhibitAnyPolicy()
         );
-
         ret.setIssuerAlternativeNameCritical(
                 access.isCritical(6) //2 keyUsage, 6 altName, 13 issuerinhibit
         );
-
         ret.setKeyUsageCritical(
                 access.isCritical(2) //2 keyUsage, 6 altName, 13 issuerinhibit
         );
-
         ret.setInhibitAndPolicyCritical(
                 access.isCritical(13) //2 keyUsage, 6 altName, 13 issuerinhibit
         );
+        ret.setInhibitAndPolicy(access.getInhibitAnyPolicy());
+        ret.setInhibitAnyPolicySkipCerts(access.getSkipCerts());
         return ret;
     }
 
