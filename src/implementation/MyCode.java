@@ -71,14 +71,14 @@ public class MyCode extends CodeV3 {
                 keyStore.load(null,null);
             } else {
                 fis = new FileInputStream(keyStoreName);
-                keyStore.load(fis,keyStorePassword.toCharArray());
+                keyStore.load(fis,keyStorePassword.toCharArray()); //TODO: CHECK THIS OUT...
             }
         } catch (KeyStoreException e) {
             e.printStackTrace();
         } catch (CertificateException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e){
-            e.printStackTrace(); //TODO: kreirati fajl ako ne postoji
+            e.printStackTrace(); //TODO: create file if not exists
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -111,7 +111,7 @@ public class MyCode extends CodeV3 {
             KeyStore tmpKeyStore = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
 
 
-            KeyStore keyStore = KeyStore.getInstance(keyStoreInstanceName);
+            keyStore = KeyStore.getInstance(keyStoreInstanceName);
             keyStore.load(fis, password.toCharArray());
 
             fis.close();
@@ -189,27 +189,37 @@ public class MyCode extends CodeV3 {
     private void setCertificateSubjectDataFromKeyStore(X509Certificate certificate)
             throws CertificateParsingException, CertificateEncodingException {
 
+        System.out.println("READING: "+ certificate); //DEBUG
+
         JcaX509CertificateHolder certHolder = new JcaX509CertificateHolder((X509Certificate) certificate);
         X500Name name = certHolder.getSubject();
 
-        //TODO: popuniti GUI iz certificate
-        access.setSubjectCountry(IETFUtils.valueToString(name.getRDNs(BCStyle.C)[0].getFirst().getValue()));
-        access.setSubjectState(IETFUtils.valueToString(name.getRDNs(BCStyle.ST)[0].getFirst().getValue()));
-        access.setSubjectLocality(IETFUtils.valueToString(name.getRDNs(BCStyle.L)[0].getFirst().getValue()));
-        access.setSubjectOrganization(IETFUtils.valueToString(name.getRDNs(BCStyle.O)[0].getFirst().getValue()));
-        access.setSubjectOrganizationUnit(IETFUtils.valueToString(name.getRDNs(BCStyle.OU)[0].getFirst().getValue()));
-        access.setSubjectCommonName(IETFUtils.valueToString(name.getRDNs(BCStyle.CN)[0].getFirst().getValue()));
+        access.setVersion(certHolder.getVersionNumber()-1); //because index of buttons[] should be -1
+
+        //populate GUI from certificate
+        if(name.getRDNs(BCStyle.C).length > 0)
+            access.setSubjectCountry(IETFUtils.valueToString(name.getRDNs(BCStyle.C)[0].getFirst().getValue()));
+        if(name.getRDNs(BCStyle.ST).length > 0)
+            access.setSubjectState(IETFUtils.valueToString(name.getRDNs(BCStyle.ST)[0].getFirst().getValue()));
+        if(name.getRDNs(BCStyle.L).length > 0)
+            access.setSubjectLocality(IETFUtils.valueToString(name.getRDNs(BCStyle.L)[0].getFirst().getValue()));
+        if(name.getRDNs(BCStyle.O).length > 0)
+            access.setSubjectOrganization(IETFUtils.valueToString(name.getRDNs(BCStyle.O)[0].getFirst().getValue()));
+        if(name.getRDNs(BCStyle.OU).length > 0)
+            access.setSubjectOrganizationUnit(IETFUtils.valueToString(name.getRDNs(BCStyle.OU)[0].getFirst().getValue()));
+        if(name.getRDNs(BCStyle.CN).length > 0)
+            access.setSubjectCommonName(IETFUtils.valueToString(name.getRDNs(BCStyle.CN)[0].getFirst().getValue()));
         access.setSubjectSignatureAlgorithm(certHolder.getSignatureAlgorithm().toString()); //TODO: PROVERA?
         access.setPublicKeySignatureAlgorithm(certificate.getPublicKey().getAlgorithm()); //treba?
 
         access.setSerialNumber(String.valueOf(certificate.getSerialNumber()));
-        access.setPublicKeyParameter(certificate.getPublicKey().toString()); //TODO JEL OK toString?
-        access.setNotBefore(certificate.getNotAfter());
+        access.setPublicKeyParameter(certificate.getPublicKey().toString()); //TODO check if ok toString
+        access.setNotBefore(certificate.getNotBefore());
         access.setNotAfter(certificate.getNotAfter());
 
         //=========GET KEY USAGE=================
         if(certificate.getKeyUsage() != null && certificate.getKeyUsage().length != 0)
-            access.setKeyUsage(certificate.getKeyUsage()); //TODO: puca ovde
+            access.setKeyUsage(certificate.getKeyUsage());
 
         //=========GET ALTERNATIVE NAMES=========
         String issuerAltNames = getAlternativeNames(certificate, 0);
@@ -236,9 +246,6 @@ public class MyCode extends CodeV3 {
             access.setSkipCerts(decoded);
             access.setInhibitAnyPolicy(true);
         }
-
-        System.out.println("READING: "+ certificate); //DEBUG
-
     }
 
     /**
