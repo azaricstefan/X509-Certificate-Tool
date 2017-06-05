@@ -1,11 +1,8 @@
 package implementation;
 
 import implementation.Beans.CertificateSubject;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
@@ -15,6 +12,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import sun.security.x509.InhibitAnyPolicyExtension;
 
 import java.math.BigInteger;
 import java.security.*;
@@ -45,13 +43,11 @@ public class Functions {
         builder.addRDN(BCStyle.C, bean.getC());
 
         String signatureAlgorithm = bean.getSA();
-        //ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSA").build(privateKey);
         ContentSigner sigGen = new JcaContentSignerBuilder(signatureAlgorithm).build(privateKey);
 
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(),
-                new BigInteger(bean.getST()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
+                new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
                 publicKey);
-
 
         // Adding keyusage extension
         int keyUsage = 0;
@@ -82,7 +78,7 @@ public class Functions {
             certGen.addExtension(Extension.keyUsage, criticalKeyUsage, keyuse.getEncoded());
         }
 
-        // Issuer alternative names
+        //===========Issuer alternative names===========
 
         boolean criticalIAN = bean.isIssuerAlternativeNameCritical();
         if (bean.getIssuerAlternativeNames().length > 0) {
@@ -96,24 +92,22 @@ public class Functions {
             certGen.addExtension(Extension.issuerAlternativeName, criticalIAN, names);
         }
 
-//        // Basic constraints
-//        if (myExtensions.chckbxUseBasicConstraints.isSelected()) {
-//            boolean critical = bean.isBasicConstraints();
-//            if (myExtensions.chckCA.isSelected()) {
-//                try{
-//                    int length = Integer.parseInt(myExtensions.textFieldPathLenConstraint.getText());
-//                    certGen.addExtension(Extension.basicConstraints, critical, new BasicConstraints(length));
-//
-//                }catch(Exception e){  certGen.addExtension(Extension.basicConstraints, critical, new BasicConstraints(false));  }
-//
-//            } else {
-//                certGen.addExtension(Extension.basicConstraints, critical, new BasicConstraints(false));
-//            }
-//        }
+        //===========Inhibit any Policy===========
 
+        boolean criticalIAP = bean.isInhibitAndPolicyCritical();
+        if (bean.isInhibitAndPolicy()){
+            //GET skipCert
+            String skipCerts = bean.getInhibitAnyPolicySkipCerts();
+            InhibitAnyPolicyExtension i = new InhibitAnyPolicyExtension(Integer.parseInt(skipCerts));
+            criticalIAP = true; //MUST BE!
+            certGen.addExtension(Extension.inhibitAnyPolicy, criticalIAP, i.getExtensionValue());
+            //2nd way
+            //InhibitAnyPolicy iap = new InhibitAnyPolicy(new BigInteger(skipCerts));
+            //certGen.addExtension(Extension.inhibitAnyPolicy, criticalIAP, iap);
+        }
         X509Certificate cert = new JcaX509CertificateConverter().getCertificate(certGen.build(sigGen));
 
+        System.out.println("CREATION: "+ cert); //DEBUG
         return cert;
-
     }
 }
