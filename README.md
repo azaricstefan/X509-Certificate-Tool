@@ -11,6 +11,10 @@ Main Class: X509_2017->code->X509
 - Neki projekat https://github.com/mitap94/ir3-zp-projekat/blob/master/zp-projekat/src/crypto/utils/BouncyCastleX509Builder.java
 - http://www.bouncycastle.org/wiki/display/JA1/BC+Version+2+APIs
 - Java code examples for java.security.cert.X509Certificate http://www.programcreek.com/java-api-examples/java.security.cert.X509Certificate
+- OID's http://www.alvestrand.no/objectid/2.5.29.html
+- InhibitAnyPolicy info http://www.docjar.com/docs/api/sun/security/x509/InhibitAnyPolicyExtension.html
+- http://www.alvestrand.no/objectid/2.5.29.54.html
+- Used library: http://rcardon.free.fr/websign/download/api-x509-ext/be/cardon/asn1/x509/extensions/InhibitAnyPolicy.html
 
 #FAQ:
 
