@@ -122,6 +122,16 @@ public class CertificateSubject {
      */
     private boolean inhibitAndPolicyCritical;
 
+    /**
+     * Inside checkbox
+     */
+    private boolean inhibitAnyPolicy;
+
+    /**
+     * Textbox field Skip Certs
+     */
+    private String inhibitAnyPolicySkipCerts;
+
     // bc1 Certificate Authority
     // bc2 Path Length Constraint
     // ian Issuer Alternative Name
@@ -155,6 +165,22 @@ public class CertificateSubject {
      */
     public boolean isEnabled(KeyUsageBox kub){
         return keyUsage[kub.getVal()];
+    }
+
+    public boolean isInhibitAnyPolicy() {
+        return inhibitAnyPolicy;
+    }
+
+    public void setInhibitAnyPolicy(boolean inhibitAnyPolicy) {
+        this.inhibitAnyPolicy = inhibitAnyPolicy;
+    }
+
+    public String getInhibitAnyPolicySkipCerts() {
+        return inhibitAnyPolicySkipCerts;
+    }
+
+    public void setInhibitAnyPolicySkipCerts(String inhibitAnyPolicySkipCerts) {
+        this.inhibitAnyPolicySkipCerts = inhibitAnyPolicySkipCerts;
     }
 
     public String getIssuerAlternativeName(int index){
