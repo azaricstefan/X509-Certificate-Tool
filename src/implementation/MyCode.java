@@ -40,7 +40,7 @@ public class MyCode extends CodeV3 {
         // TODO Auto-generated constructor stub
     }
 
-    public void saveLocalKeyStore(){
+    public void saveLocalKeyStore() {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(keyStoreName);
@@ -49,10 +49,13 @@ public class MyCode extends CodeV3 {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             if (fos != null)
-                try {fos.close();}
-                catch (IOException e) {e.printStackTrace();}
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
         }
     }
 
@@ -63,21 +66,24 @@ public class MyCode extends CodeV3 {
             //keyStore = new BouncyCastleStore.insta.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
             keyStore = new BouncyCastleStore();
 
-            if(!(new File(keyStoreName).exists())){
-                keyStore.engineLoad(null,null);
+            if (!(new File(keyStoreName).exists())) {
+                keyStore.engineLoad(null, null);
             } else {
                 fis = new FileInputStream(keyStoreName);
-                keyStore.engineLoad(fis,keyStorePassword.toCharArray()); //TODO: CHECK THIS OUT...
+                keyStore.engineLoad(fis, keyStorePassword.toCharArray()); //TODO: CHECK THIS OUT...
                 return keyStore.engineAliases();
             }
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             e.printStackTrace(); //TODO: create file if not exists
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (fis != null){
-                try { fis.close(); }
-                catch (IOException e) { e.printStackTrace(); }
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return null;
@@ -85,8 +91,25 @@ public class MyCode extends CodeV3 {
 
     @Override
     public void resetLocalKeystore() {
-        // TODO Auto-generated method stub
-
+        Enumeration aliases = keyStore.engineAliases();
+        while (aliases.hasMoreElements()) {
+            String entry = (String) aliases.nextElement();
+            try {
+                keyStore.engineDeleteEntry(entry);
+            } catch (KeyStoreException e) {
+                e.printStackTrace();
+            }
+        }
+        File file = new File(keyStoreName);
+        if (file.exists()) {
+            if (!file.delete()) {
+                try {
+                    throw new Exception("UNABLE TO DELETE KEY STORE!");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override
@@ -175,25 +198,25 @@ public class MyCode extends CodeV3 {
     private void setCertificateSubjectDataFromKeyStore(X509Certificate certificate)
             throws CertificateParsingException, CertificateEncodingException {
 
-        System.out.println("READING: "+ certificate); //DEBUG
+        System.out.println("READING: " + certificate); //DEBUG
 
         JcaX509CertificateHolder certHolder = new JcaX509CertificateHolder((X509Certificate) certificate);
         X500Name name = certHolder.getSubject();
 
-        access.setVersion(certHolder.getVersionNumber()-1); //because index of buttons[] should be -1
+        access.setVersion(certHolder.getVersionNumber() - 1); //because index of buttons[] should be -1
 
         //populate GUI from certificate
-        if(name.getRDNs(BCStyle.C).length > 0)
+        if (name.getRDNs(BCStyle.C).length > 0)
             access.setSubjectCountry(IETFUtils.valueToString(name.getRDNs(BCStyle.C)[0].getFirst().getValue()));
-        if(name.getRDNs(BCStyle.ST).length > 0)
+        if (name.getRDNs(BCStyle.ST).length > 0)
             access.setSubjectState(IETFUtils.valueToString(name.getRDNs(BCStyle.ST)[0].getFirst().getValue()));
-        if(name.getRDNs(BCStyle.L).length > 0)
+        if (name.getRDNs(BCStyle.L).length > 0)
             access.setSubjectLocality(IETFUtils.valueToString(name.getRDNs(BCStyle.L)[0].getFirst().getValue()));
-        if(name.getRDNs(BCStyle.O).length > 0)
+        if (name.getRDNs(BCStyle.O).length > 0)
             access.setSubjectOrganization(IETFUtils.valueToString(name.getRDNs(BCStyle.O)[0].getFirst().getValue()));
-        if(name.getRDNs(BCStyle.OU).length > 0)
+        if (name.getRDNs(BCStyle.OU).length > 0)
             access.setSubjectOrganizationUnit(IETFUtils.valueToString(name.getRDNs(BCStyle.OU)[0].getFirst().getValue()));
-        if(name.getRDNs(BCStyle.CN).length > 0)
+        if (name.getRDNs(BCStyle.CN).length > 0)
             access.setSubjectCommonName(IETFUtils.valueToString(name.getRDNs(BCStyle.CN)[0].getFirst().getValue()));
         access.setSubjectSignatureAlgorithm(certHolder.getSignatureAlgorithm().toString()); //TODO: PROVERA?
         access.setPublicKeySignatureAlgorithm(certificate.getPublicKey().getAlgorithm()); //treba?
@@ -204,16 +227,16 @@ public class MyCode extends CodeV3 {
         access.setNotAfter(certificate.getNotAfter());
 
         //=========GET KEY USAGE=================
-        if(certificate.getKeyUsage() != null && certificate.getKeyUsage().length != 0)
+        if (certificate.getKeyUsage() != null && certificate.getKeyUsage().length != 0)
             access.setKeyUsage(certificate.getKeyUsage());
 
         //=========GET ALTERNATIVE NAMES=========
         String issuerAltNames = getAlternativeNames(certificate, 0);
-        if(issuerAltNames != null){
+        if (issuerAltNames != null) {
             access.setAlternativeName(6, issuerAltNames); //5 subject AltName,6 issuerAltName, 2 keyUsage,13 issuerinhibit
         }
-        String subjectAltNames = getAlternativeNames(certificate,1);
-        if(subjectAltNames != null){
+        String subjectAltNames = getAlternativeNames(certificate, 1);
+        if (subjectAltNames != null) {
             access.setAlternativeName(5, subjectAltNames);
         }
 
@@ -222,7 +245,7 @@ public class MyCode extends CodeV3 {
         ASN1Primitive prim = null;
         String decoded = null;
         byte[] tt = certificate.getExtensionValue("2.5.29.54");
-        if(tt != null){
+        if (tt != null) {
             try {
                 prim = JcaX509ExtensionUtils.parseExtensionValue(tt);
                 decoded = prim.toString();
@@ -235,22 +258,21 @@ public class MyCode extends CodeV3 {
     }
 
     /**
-     *
      * @param certificate take the info from
-     * @param what Issuer 0, Subject 1
+     * @param what        Issuer 0, Subject 1
      * @return {@link String} allNames
      * @throws CertificateParsingException
      */
     private String getAlternativeNames(X509Certificate certificate, int what)
             throws CertificateParsingException {
         Collection<List<?>> allNames;
-        if(what == 0)
+        if (what == 0)
             allNames = certificate.getIssuerAlternativeNames();
         else
             allNames = certificate.getSubjectAlternativeNames();
         String altNames;
         //citanje imena
-        if(allNames != null) {
+        if (allNames != null) {
             Iterator<List<?>> it = allNames.iterator();
             StringBuilder stringBuilder = new StringBuilder();
             while (it.hasNext()) {
@@ -258,7 +280,7 @@ public class MyCode extends CodeV3 {
                 stringBuilder.append(list.get(1));
             }
             altNames = stringBuilder.toString();
-            return  altNames;
+            return altNames;
         }
         return null;
     }
