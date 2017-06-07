@@ -6,16 +6,24 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.util.encoders.Base64;
 import sun.security.x509.InhibitAnyPolicyExtension;
 
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -45,11 +53,26 @@ public class Functions {
         String signatureAlgorithm = bean.getSA();
         ContentSigner sigGen = new JcaContentSignerBuilder(signatureAlgorithm).build(privateKey);
 
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(),
-                new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
-                publicKey);
+        //V1 or V3?
+        int version = bean.getVersion();
+        X509v1CertificateBuilder certGenV1 = null;
+        X509v3CertificateBuilder certGen = null;
+        switch(version){
+            case 0: //1
+                certGenV1 = new JcaX509v1CertificateBuilder(builder.build(),
+                        new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
+                        publicKey);
+                break;
+            case 2: //3
+                certGen = new JcaX509v3CertificateBuilder(builder.build(),
+                        new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
+                        publicKey);
+                break;
+            default:
+                throw new Exception("Version doesn't exist!(" + version + ")");
+        }
 
-        // Adding keyusage extension
+        //==============KeyUsage extension==============
         int keyUsage = 0;
         boolean criticalKeyUsage = bean.isKeyUsageCritical();
 
@@ -105,9 +128,51 @@ public class Functions {
             //InhibitAnyPolicy iap = new InhibitAnyPolicy(new BigInteger(skipCerts));
             //certGen.addExtension(Extension.inhibitAnyPolicy, criticalIAP, iap);
         }
-        X509Certificate cert = new JcaX509CertificateConverter().getCertificate(certGen.build(sigGen));
 
+        //========FINAL BUILD========
+        X509Certificate cert = null;
+        //v3
+        if(version == 2) {
+            cert = new JcaX509CertificateConverter().getCertificate(certGen.build(sigGen));
+        }
+        //v1
+        if(version == 0) {
+            cert = new JcaX509CertificateConverter().getCertificate(certGenV1.build(sigGen));
+        }
         System.out.println("CREATION: "+ cert); //DEBUG
         return cert;
+    }
+
+    public static boolean writeCertificateToFile(String file, String encoded) {
+        FileOutputStream fos;
+        try {
+            fos = new FileOutputStream(file);
+            PrintWriter pw = new PrintWriter(fos, true);
+            pw.write(encoded);
+
+            pw.close();
+            fos.close();
+            return true; //OK
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static String Base64Encode(X509Certificate certificate) {
+        Base64 encoder = new Base64();
+        byte[] derCert = null;
+        try {
+            derCert = certificate.getEncoded();
+        } catch (CertificateEncodingException e) {
+            e.printStackTrace();
+        }
+        String pemCertPre = new String(Base64.encode(derCert)); //TODO: WTF ?!
+        String pemCert = pemCertPre;
+        return pemCert;
+    }
+
+    public static String PemEncode(X509Certificate cert) {
+        return null; //TODO PEM
     }
 }
