@@ -66,18 +66,17 @@ public class MyCode extends CodeV3 {
     public Enumeration<String> loadLocalKeystore() {
         FileInputStream fis = null;
         try {
-            //keyStore = new BouncyCastleStore.insta.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
             keyStore = new BouncyCastleStore();
 
             if (!(new File(keyStoreName).exists())) {
                 keyStore.engineLoad(null, null);
             } else {
                 fis = new FileInputStream(keyStoreName);
-                keyStore.engineLoad(fis, keyStorePassword.toCharArray()); //TODO: CHECK THIS OUT...
+                keyStore.engineLoad(fis, keyStorePassword.toCharArray());
                 return keyStore.engineAliases();
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace(); //TODO: create file if not exists
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -126,74 +125,115 @@ public class MyCode extends CodeV3 {
      * @return
      */
     @Override
-    public boolean exportKeypair(String name, String file, String password) {
-        //TODO: EXPORT KEYPAIR
+    public boolean exportKeypair(String keypair_name, String file, String password) {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file+".p12");
+            KeyStore tmpKS = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
+
+            Key key = keyStore.engineGetKey(keypair_name, keyStorePassword.toCharArray());
+            Certificate[] chain = keyStore.engineGetCertificateChain(keypair_name);
+
+            tmpKS.load(null,null); //initalize ...
+            tmpKS.setKeyEntry(keypair_name, key, password.toCharArray(), chain);
+            tmpKS.store(fos, password.toCharArray());
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } finally {
+            if (fos != null)
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+        }
         return false;
     }
 
     @Override
     public boolean importKeypair(String keypair_name, String file, String password) {
-        try { //TODO import keypair!
+        try {
+            //TODO import keypair!
             FileInputStream fis = new FileInputStream(file);
+
             KeyStore tmpKeyStore = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
 
-
-            //keyStore = KeyStore.getInstance(keyStoreInstanceName); //NOT NEEDED
-            keyStore.engineLoad(fis, password.toCharArray());
+            tmpKeyStore.load(fis, password.toCharArray()); //ucitaj u privremeni
 
             fis.close();
-            Enumeration<String> aliases = keyStore.engineAliases();
-            String selectedAlias = aliases.nextElement();
+            Enumeration<String> aliases = tmpKeyStore.aliases();
+            String selectedAlias = aliases.nextElement(); //get alias of new keypair
 
+            Key key = tmpKeyStore.getKey(selectedAlias, password.toCharArray()); //get key
+            Certificate[] chain = tmpKeyStore.getCertificateChain(selectedAlias); //get chain
 
-            Key key = keyStore.engineGetKey(selectedAlias, password.toCharArray());
-            Certificate[] chain = keyStore.engineGetCertificateChain(selectedAlias);
-
-            //sad dialozi
-            //KeyStore ks = KeyPairsStore.getInstance();
-
-            //nova sifra?
-            keyStore.engineSetKeyEntry(selectedAlias, key, password.toCharArray(), chain);
-            //KeyPairsStore.save();
+            keyStore.engineSetKeyEntry(keypair_name, key, keyStorePassword.toCharArray(), chain);
 
             saveLocalKeyStore();
-
-            access.addKeypair(keypair_name);
-
+            return true;
 
         } catch (UnrecoverableKeyException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (KeyStoreException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CertificateException e) {
             e.printStackTrace();
         }
-
-
         return false;
     }
 
     @Override
     public boolean removeKeypair(String keypair_name) {
         // TODO Auto-generated method stub
+        try {
+            keyStore.engineDeleteEntry(keypair_name);
+            saveLocalKeyStore();
+            loadLocalKeystore();
+            return true;
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
+    /**
+     * Метода враћа -1 у случају
+     * грешке, 0 у случају да сертификат сачуван под тим алиасом није потписан, 1 у случају да је
+     * потписан, 2 у случају да је у питању увезени trusted сертификат.
+     * @param keypair_name
+     * @return -1 if error; 0 if not signed under that alias, 1 if signed, 2 imported trusted certificate
+     */
     @Override
     public int loadKeypair(String keypair_name) {
+        int ret = -1;
         try {
             Key key = keyStore.engineGetKey(keypair_name, keyStorePassword.toCharArray());
             Enumeration<String> aliases = keyStore.engineAliases();
-            String selectedAlias = aliases.nextElement();
-            Certificate[] chain = keyStore.engineGetCertificateChain(selectedAlias);
-            X509Certificate certificate = (X509Certificate) chain[0];
-            setCertificateSubjectDataFromKeyStore(certificate);
+            while(true) {
+                String selectedAlias = aliases.nextElement();
+                if (selectedAlias.equals(keypair_name)) {
+                    Certificate[] chain = keyStore.engineGetCertificateChain(selectedAlias);
+                    X509Certificate certificate = (X509Certificate) chain[0];
+                    setCertificateSubjectDataFromKeyStore(certificate);
+                    ret = 0; //TODO: check return values?
+                    break;
+                }
+            }
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -204,8 +244,7 @@ public class MyCode extends CodeV3 {
         } catch (CertificateEncodingException e) {
             e.printStackTrace();
         }
-
-        return 0;
+        return ret;
     }
 
     private void setCertificateSubjectDataFromKeyStore(X509Certificate certificate)
@@ -231,8 +270,8 @@ public class MyCode extends CodeV3 {
             access.setSubjectOrganizationUnit(IETFUtils.valueToString(name.getRDNs(BCStyle.OU)[0].getFirst().getValue()));
         if (name.getRDNs(BCStyle.CN).length > 0)
             access.setSubjectCommonName(IETFUtils.valueToString(name.getRDNs(BCStyle.CN)[0].getFirst().getValue()));
-        access.setSubjectSignatureAlgorithm(certHolder.getSignatureAlgorithm().toString()); //TODO: PROVERA?
-        access.setPublicKeySignatureAlgorithm(certificate.getPublicKey().getAlgorithm()); //treba?
+        access.setSubjectSignatureAlgorithm(certificate.getSigAlgName());
+        access.setPublicKeySignatureAlgorithm(certificate.getSigAlgName());
 
         access.setSerialNumber(String.valueOf(certificate.getSerialNumber()));
         access.setPublicKeyParameter(certificate.getPublicKey().toString()); //TODO check if ok toString
@@ -308,17 +347,12 @@ public class MyCode extends CodeV3 {
             PrivateKey PRa = keyPair.getPrivate();
             X509Certificate certificate = Functions.createCertificate(PUa, PRa, bean);
 
-            //TODO: CREATE KEY STORE IMPLEMENTATION
-            //KeyStore ks = KeyPairsStore.getInstance();
 
             Certificate[] chain = new Certificate[1];
             chain[0] = certificate;
 
-            //TODO: password?
             keyStore.engineSetKeyEntry(keypair_name, PRa, keyStorePassword.toCharArray(), chain);
 
-            //TODO:
-            //KeyPairsStore.save();
             saveLocalKeyStore();
             access.addKeypair(keypair_name);
 
