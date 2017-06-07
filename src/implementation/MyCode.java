@@ -13,13 +13,14 @@ import implementation.Beans.CertificateSubject;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-import org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi;
+import org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.BouncyCastleStore;
 import org.bouncycastle.jcajce.provider.keystore.pkcs12.PKCS12KeyStoreSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import sun.security.x509.InhibitAnyPolicyExtension;
@@ -27,8 +28,8 @@ import x509.v3.CodeV3;
 
 public class MyCode extends CodeV3 {
 
-    KeyStore keyStore;
-    //BcKeyStoreSpi keyStore; //Da li njega koristiti?
+    //KeyStore keyStore;
+    BouncyCastleStore keyStore; //Da li njega koristiti?
     private static final String keyStoreName = "keyStore.p12";
     private static final String keyStoreInstanceName = "PKCS12";
     private static final String keyStorePassword = "sifra";
@@ -43,14 +44,8 @@ public class MyCode extends CodeV3 {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(keyStoreName);
-            keyStore.store(fos, keyStorePassword.toCharArray());
+            keyStore.engineStore(fos, keyStorePassword.toCharArray());
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,22 +60,18 @@ public class MyCode extends CodeV3 {
     public Enumeration<String> loadLocalKeystore() {
         FileInputStream fis = null;
         try {
-            keyStore = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
+            //keyStore = new BouncyCastleStore.insta.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
+            keyStore = new BouncyCastleStore();
 
             if(!(new File(keyStoreName).exists())){
-                keyStore.load(null,null);
+                keyStore.engineLoad(null,null);
             } else {
                 fis = new FileInputStream(keyStoreName);
-                keyStore.load(fis,keyStorePassword.toCharArray()); //TODO: CHECK THIS OUT...
+                keyStore.engineLoad(fis,keyStorePassword.toCharArray()); //TODO: CHECK THIS OUT...
+                return keyStore.engineAliases();
             }
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
         } catch (FileNotFoundException e){
             e.printStackTrace(); //TODO: create file if not exists
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -111,22 +102,22 @@ public class MyCode extends CodeV3 {
             KeyStore tmpKeyStore = KeyStore.getInstance(keyStoreInstanceName, new BouncyCastleProvider());
 
 
-            keyStore = KeyStore.getInstance(keyStoreInstanceName);
-            keyStore.load(fis, password.toCharArray());
+            //keyStore = KeyStore.getInstance(keyStoreInstanceName); //NOT NEEDED
+            keyStore.engineLoad(fis, password.toCharArray());
 
             fis.close();
-            Enumeration<String> aliases = keyStore.aliases();
+            Enumeration<String> aliases = keyStore.engineAliases();
             String selectedAlias = aliases.nextElement();
 
 
-            Key key = keyStore.getKey(selectedAlias, password.toCharArray());
-            Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
+            Key key = keyStore.engineGetKey(selectedAlias, password.toCharArray());
+            Certificate[] chain = keyStore.engineGetCertificateChain(selectedAlias);
 
             //sad dialozi
             //KeyStore ks = KeyPairsStore.getInstance();
 
             //nova sifra?
-            keyStore.setKeyEntry(selectedAlias, key, password.toCharArray(), chain);
+            keyStore.engineSetKeyEntry(selectedAlias, key, password.toCharArray(), chain);
             //KeyPairsStore.save();
 
             saveLocalKeyStore();
@@ -141,9 +132,6 @@ public class MyCode extends CodeV3 {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (CertificateException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
@@ -164,15 +152,13 @@ public class MyCode extends CodeV3 {
     @Override
     public int loadKeypair(String keypair_name) {
         try {
-            Key key = keyStore.getKey(keypair_name, keyStorePassword.toCharArray());
-            Enumeration<String> aliases = keyStore.aliases();
+            Key key = keyStore.engineGetKey(keypair_name, keyStorePassword.toCharArray());
+            Enumeration<String> aliases = keyStore.engineAliases();
             String selectedAlias = aliases.nextElement();
-            Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
+            Certificate[] chain = keyStore.engineGetCertificateChain(selectedAlias);
             X509Certificate certificate = (X509Certificate) chain[0];
             setCertificateSubjectDataFromKeyStore(certificate);
 
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (UnrecoverableKeyException e) {
@@ -294,7 +280,7 @@ public class MyCode extends CodeV3 {
             chain[0] = certificate;
 
             //TODO: password?
-            keyStore.setKeyEntry(keypair_name, PRa, keyStorePassword.toCharArray(), chain);
+            keyStore.engineSetKeyEntry(keypair_name, PRa, keyStorePassword.toCharArray(), chain);
 
             //TODO:
             //KeyPairsStore.save();
