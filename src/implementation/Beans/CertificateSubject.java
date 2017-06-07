@@ -132,6 +132,10 @@ public class CertificateSubject {
      */
     private String inhibitAnyPolicySkipCerts;
 
+    /**
+     * Certificate version {1 or 3}
+     */
+    private int version;
     // bc1 Certificate Authority
     // bc2 Path Length Constraint
     // ian Issuer Alternative Name
@@ -141,7 +145,7 @@ public class CertificateSubject {
 
     public CertificateSubject(String C, String ST, String L, String O, String OU, String CN, String SA,
                               String SN, String keyLength, Date validNotBefore, Date validNotAfter,
-                              boolean[] keyUsage, String[] issuerAlternativeNames, boolean inhibitAndPolicy) {
+                              boolean[] keyUsage, String[] issuerAlternativeNames, boolean inhibitAndPolicy, int version) {
         this.C = C;
         this.ST = ST;
         this.L = L;
@@ -156,6 +160,7 @@ public class CertificateSubject {
         this.keyUsage = keyUsage;
         this.issuerAlternativeNames = issuerAlternativeNames;
         this.inhibitAndPolicy = inhibitAndPolicy;
+        this.version = version;
     }
 
     /**
@@ -165,6 +170,14 @@ public class CertificateSubject {
      */
     public boolean isEnabled(KeyUsageBox kub){
         return keyUsage[kub.getVal()];
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 
     public boolean isInhibitAnyPolicy() {
