@@ -26,6 +26,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import sun.security.x509.InhibitAnyPolicyExtension;
 import x509.v3.CodeV3;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 public class MyCode extends CodeV3 {
 
     //KeyStore keyStore;
@@ -112,9 +115,19 @@ public class MyCode extends CodeV3 {
         }
     }
 
+    /**
+     * Tреба да постојећи
+     * пар кључева који је у локалном keystore-у сачуван под алиасом keypair_name извезе у фајл
+     * са путањом file у PKCS#12 формату и заштити лозинком. Повратна вредност методе
+     * означава успешност операције, false у случају грешке.
+     * @param name
+     * @param file
+     * @param password
+     * @return
+     */
     @Override
     public boolean exportKeypair(String name, String file, String password) {
-        // TODO Auto-generated method stub
+        //TODO: EXPORT KEYPAIR
         return false;
     }
 
@@ -336,7 +349,8 @@ public class MyCode extends CodeV3 {
                 access.getNotAfter(),
                 access.getKeyUsage(),
                 access.getAlternativeName(6), //2 keyUsage, 6 altName, 13 issuerinhibit
-                access.getInhibitAnyPolicy()
+                access.getInhibitAnyPolicy(),
+                access.getVersion()
         );
         ret.setIssuerAlternativeNameCritical(
                 access.isCritical(6) //2 keyUsage, 6 altName, 13 issuerinhibit
@@ -352,9 +366,29 @@ public class MyCode extends CodeV3 {
         return ret;
     }
 
+    /**
+     * Tреба да у фајл file (екстензије .cer) извезе
+     * постојећи сертификат тренутно селектован на графичком корисничком интерфејсу и
+     * кодира га на начин назначен вредношћу параметра encoding (0 за DER, 1 за PEM).
+     * Повратна вредност методе означава успешност операције, false у случају грешке.
+     * @param file
+     * @param encoding 0 => DER; 1 => PEM
+     * @return Success of the operation
+     */
     @Override
     public boolean exportCertificate(File file, int encoding) {
-        // TODO Auto-generated method stub
+        X509Certificate cert;
+        access.getSubject();
+        //cert = (X509Certificate) keyStore.engineGetCertificate(file);
+        String encoded;
+        //TODO: EXPORT CERTIFICATE
+        switch(encoding) {
+            case 0: //DER - binary form of the certificate
+                //encoded = Functions.Base64Encode(cert);
+            case 1: //PEM - base64 and encrypted form of the certificate
+          //      encoded = Functions.PemEncode(cert);
+        }
+        //return Functions.writeCertificateToFile(file, encoded, encoding);
         return false;
     }
 
