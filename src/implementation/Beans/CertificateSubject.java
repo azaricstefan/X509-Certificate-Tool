@@ -60,6 +60,19 @@ public class CertificateSubject {
      */
     private Date validNotAfter;
 
+    //ISSUER SUBJECT
+
+    private String iC;
+    private String iST;
+    private String iL;
+    private String iO;
+    private String iOU;
+    private String iCN;
+    /**
+     * Issuer signature algorithm
+     */
+    private String iSN;
+
 
     // TODO: EXTENDED key usage, issuerAlternativeName, inhibitAnyPolicy
     public enum KeyUsageBox {
@@ -384,5 +397,61 @@ public class CertificateSubject {
 
     public void setInhibitAndPolicy(boolean inhibitAndPolicy) {
         this.inhibitAndPolicy = inhibitAndPolicy;
+    }
+
+    public String getiC() {
+        return iC;
+    }
+
+    public void setiC(String iC) {
+        this.iC = iC;
+    }
+
+    public String getiST() {
+        return iST;
+    }
+
+    public void setiST(String iST) {
+        this.iST = iST;
+    }
+
+    public String getiL() {
+        return iL;
+    }
+
+    public void setiL(String iL) {
+        this.iL = iL;
+    }
+
+    public String getiO() {
+        return iO;
+    }
+
+    public void setiO(String iO) {
+        this.iO = iO;
+    }
+
+    public String getiOU() {
+        return iOU;
+    }
+
+    public void setiOU(String iOU) {
+        this.iOU = iOU;
+    }
+
+    public String getiCN() {
+        return iCN;
+    }
+
+    public void setiCN(String iCN) {
+        this.iCN = iCN;
+    }
+
+    public String getiSN() {
+        return iSN;
+    }
+
+    public void setiSN(String iSN) {
+        this.iSN = iSN;
     }
 }
