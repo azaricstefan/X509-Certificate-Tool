@@ -16,6 +16,8 @@ import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import sun.security.x509.InhibitAnyPolicyExtension;
 
 
@@ -62,13 +64,17 @@ public class Functions {
         X509v3CertificateBuilder certGen = null;
         switch(version){
             case 0: //1
-                certGenV1 = new JcaX509v1CertificateBuilder(builder.build(),
-                        new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
+                certGenV1 = new JcaX509v1CertificateBuilder(
+                        builder.build(),
+                        new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(),
+                        builder.build(),
                         publicKey);
                 break;
             case 2: //3
-                certGen = new JcaX509v3CertificateBuilder(builder.build(),
-                        new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(), builder.build(),
+                certGen = new JcaX509v3CertificateBuilder(
+                        builder.build(),
+                        new BigInteger(bean.getSN()), bean.getValidNotBefore(), bean.getValidNotAfter(),
+                        builder.build(),
                         publicKey);
                 break;
             default:
@@ -146,20 +152,28 @@ public class Functions {
         return cert;
     }
 
-    public static boolean writeCertificateToFile(String file, String encoded) {
+    public static boolean writeCertificateToFile(File file, String encoded, byte[] derCer, int encoding) {
         FileOutputStream fos;
         try {
-            fos = new FileOutputStream(file);
-            PrintWriter pw = new PrintWriter(fos, true);
-            pw.write(encoded);
+            fos = new FileOutputStream(file.getAbsolutePath() + ".cer");
+            //PrintWriter pw = new PrintWriter(fos, true);
+            //pw.write(encoded);
 
-            pw.close();
+            //==
+            if(encoding == 1) { //PEM
+                PemWriter pem = new PemWriter(new OutputStreamWriter(fos));
+                pem.writeObject(new PemObject("CERTIFICATE", derCer));
+                pem.flush(); pem.close();
+            } else if(encoding == 0) {//DER
+                //DO DER
+                fos.write(derCer);
+            }
+            //==
+
+            //pw.close();
             fos.close();
             return true; //OK
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (Exception e) { e.printStackTrace(); return false;}
     }
 
     public static String PEMBase64Encode(X509Certificate certificate) {
