@@ -1,14 +1,15 @@
 package implementation;
 
 import implementation.Beans.CertificateSubject;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.X509KeyUsage;
@@ -18,13 +19,15 @@ import org.bouncycastle.util.encoders.Base64;
 import sun.security.x509.InhibitAnyPolicyExtension;
 
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Project name: zp-projekat
@@ -159,20 +162,95 @@ public class Functions {
         }
     }
 
-    public static String Base64Encode(X509Certificate certificate) {
-        Base64 encoder = new Base64();
+    public static String PEMBase64Encode(X509Certificate certificate) {
         byte[] derCert = null;
         try {
             derCert = certificate.getEncoded();
         } catch (CertificateEncodingException e) {
             e.printStackTrace();
         }
-        String pemCertPre = new String(Base64.encode(derCert)); //TODO: WTF ?!
-        String pemCert = pemCertPre;
+        String pemCert = new String(Base64.encode(derCert));             //TODO: WTF ?!
         return pemCert;
     }
 
-    public static String PemEncode(X509Certificate cert) {
-        return null; //TODO PEM
+    public static byte[] DEREncode(X509Certificate cert) {
+        byte[] derCert = null;
+        try {
+            derCert = cert.getEncoded();
+        } catch (CertificateEncodingException e) { e.printStackTrace(); }
+        return derCert;
+    }
+
+    //=====================================      CSR      =========================================================
+    public static final String keyExtensionName[] = { "Digital Signature", "Non Repudiation", "Key Enchipherment",
+            "Data Enchipherment", "Key Agreement", "Certificate Signing", "CRL Signing", "Encipher Only",
+            "Decipher Only" };
+
+    public static int getX509KeyUsage(int i) {
+        switch (i) {
+            case 0:
+                return X509KeyUsage.digitalSignature;
+            case 1:
+                return X509KeyUsage.nonRepudiation;
+            case 2:
+                return X509KeyUsage.keyEncipherment;
+            case 3:
+                return X509KeyUsage.dataEncipherment;
+            case 4:
+                return X509KeyUsage.keyAgreement;
+            case 5:
+                return X509KeyUsage.keyCertSign;
+            case 6:
+                return X509KeyUsage.cRLSign;
+            case 7:
+                return X509KeyUsage.encipherOnly;
+            case 8:
+                return X509KeyUsage.decipherOnly;
+        }
+        return 0;
+    }
+
+    public static void addToGeneratorExtensions(ExtensionsGenerator extGen, X509Certificate cert) throws Exception {
+        JcaX509CertificateHolder certHolder = null;
+        try {
+            certHolder = new JcaX509CertificateHolder(cert);
+        } catch (CertificateEncodingException e1) { e1.printStackTrace(); }
+        Set criticalExtensions = certHolder.getCriticalExtensionOIDs();
+        boolean[] keyUsage = cert.getKeyUsage();
+        int keyUse = 0;
+        if (keyUsage != null) {
+            for (int i = 0; i < Functions.keyExtensionName.length; i++) {
+                if (keyUsage[i]) {
+                    keyUse |= Functions.getX509KeyUsage(i);
+                }
+            }
+            extGen.addExtension(Extension.keyUsage, criticalExtensions.contains(Extension.keyUsage),
+                    new KeyUsage(keyUse));
+        }
+        Collection<List<?>> allNames = cert.getIssuerAlternativeNames();
+        if (allNames != null) {
+            Iterator<List<?>> it = allNames.iterator();
+            GeneralName[] all = new GeneralName[allNames.size()];
+            int i = 0;
+            while (it.hasNext()) {
+                List<?> list = it.next();
+                int generalNameFormat = (Integer) list.get(0);
+                String genName = (String) list.get(1);
+                all[i++] = new GeneralName(generalNameFormat, genName);
+            }
+            GeneralNames names = new GeneralNames(all);
+            extGen.addExtension(Extension.issuerAlternativeName,
+                    criticalExtensions.contains(Extension.issuerAlternativeName), names);
+        }
+        //TODO: add inhibitAnyPolicy?
+        //TODO: why is this needed?
+    }
+
+    public static void addExtensionsToBuilder(X509v3CertificateBuilder certificateBuilder, Extensions allExt)
+            throws CertIOException {
+        //TODO: why this?
+        ASN1ObjectIdentifier[] allId = allExt.getExtensionOIDs();
+        for (ASN1ObjectIdentifier aoi : allId)
+            certificateBuilder.addExtension(allExt.getExtension(aoi));
     }
 }
