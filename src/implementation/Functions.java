@@ -1,7 +1,11 @@
 package implementation;
 
 import implementation.Beans.CertificateSubject;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.*;
@@ -106,8 +110,8 @@ public class Functions {
 
 
         if (keyUsage != 0) {
-            X509KeyUsage keyuse = new X509KeyUsage(keyUsage);
-            certGen.addExtension(Extension.keyUsage, criticalKeyUsage, keyuse.getEncoded());
+            X509KeyUsage x509keyUsage = new X509KeyUsage(keyUsage);
+            certGen.addExtension(Extension.keyUsage, criticalKeyUsage, x509keyUsage.getEncoded());
         }
 
         //===========Issuer alternative names===========
@@ -257,14 +261,28 @@ public class Functions {
                     criticalExtensions.contains(Extension.issuerAlternativeName), names);
         }
         //TODO: add inhibitAnyPolicy?
-        //TODO: why is this needed?
     }
 
     public static void addExtensionsToBuilder(X509v3CertificateBuilder certificateBuilder, Extensions allExt)
             throws CertIOException {
-        //TODO: why this?
         ASN1ObjectIdentifier[] allId = allExt.getExtensionOIDs();
         for (ASN1ObjectIdentifier aoi : allId)
             certificateBuilder.addExtension(allExt.getExtension(aoi));
+    }
+
+    public static void dumpASN1(X509Certificate certificate){
+        //DUMP
+        ASN1InputStream ais = null;
+        try {
+            ais = new ASN1InputStream(
+                    new ByteArrayInputStream(certificate.getEncoded()));
+            while (ais.available() > 0) {
+                ASN1Encodable asn1Encodable;
+                ASN1Primitive obj = ais.readObject();
+                System.out.println(ASN1Dump.dumpAsString(obj, true));
+            }
+            ais.close();
+        } catch (Exception e) {e.printStackTrace();}
+        //DUMP
     }
 }

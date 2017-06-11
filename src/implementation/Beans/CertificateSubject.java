@@ -74,7 +74,6 @@ public class CertificateSubject {
     private String iSN;
 
 
-    // TODO: EXTENDED key usage, issuerAlternativeName, inhibitAnyPolicy
     public enum KeyUsageBox {
         DIGITAL_SIGNATURE(0),
         CONTENT_COMMITMENT(1),
