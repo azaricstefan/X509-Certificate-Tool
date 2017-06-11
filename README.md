@@ -14,6 +14,7 @@ Main Class: X509_2017->code->X509
 - InhibitAnyPolicy info http://www.docjar.com/docs/api/sun/security/x509/InhibitAnyPolicyExtension.html
 - http://www.alvestrand.no/objectid/2.5.29.54.html
 - Used library: http://rcardon.free.fr/websign/download/api-x509-ext/be/cardon/asn1/x509/extensions/InhibitAnyPolicy.html
+- MUP RS http://ca.mup.gov.rs/MUPCACPSv2.pdf | http://ca.mup.gov.rs/download.html
 
 # FAQ:
 
