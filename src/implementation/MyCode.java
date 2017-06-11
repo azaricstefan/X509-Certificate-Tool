@@ -10,9 +10,12 @@ import java.util.*;
 
 import code.GuiException;
 import implementation.Beans.CertificateSubject;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAPublicKey;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
@@ -183,7 +186,7 @@ public class MyCode extends CodeV3 {
             Certificate[] chain = keyStore.getCertificateChain(keypair_name);
 
             tmpKS.load(null, null); //initalize ...
-            tmpKS.setKeyEntry(keypair_name, (PrivateKey)key, password.toCharArray(), chain);
+            tmpKS.setKeyEntry(keypair_name, (PrivateKey) key, password.toCharArray(), chain);
             tmpKS.store(fos, password.toCharArray());
             return true;
         } catch (Exception e) {
@@ -279,7 +282,7 @@ public class MyCode extends CodeV3 {
             Enumeration<String> aliases = keyStore.aliases();
             while (true) {
                 String selectedAlias;
-                if(aliases.hasMoreElements())
+                if (aliases.hasMoreElements())
                     selectedAlias = aliases.nextElement();
                 else break;
                 if (selectedAlias.toLowerCase().equals(keypair_name.toLowerCase())) {
@@ -307,21 +310,20 @@ public class MyCode extends CodeV3 {
                     setCertificateSubjectDataFromKeyStore(certificate);
                     //==set issuer data
                     //ISSUER SET
-                    String s=certificate.getIssuerDN().toString()+" ";
+                    String s = certificate.getIssuerDN().toString() + " ";
                     access.setIssuer(
                             s.replaceAll(", ", ",")
-                                    .replaceAll("=,","= ,")
+                                    .replaceAll("=,", "= ,")
                                     .replaceAll("  ", " ")
                     );
                     //X509Certificate issuer = (X509Certificate) keyStore.engineGetCertificateChain(keypair_name)[0];
                     X509Certificate issuer = (X509Certificate) keyStore.getCertificate(keypair_name);
-                    if(issuer!=null)
+                    if (issuer != null)
                         access.setIssuerSignatureAlgorithm(issuer.getSigAlgName());
                     else
                         access.setIssuerSignatureAlgorithm(certificate.getSigAlgName());
                     //ISSUER END
                     //== end issuer data
-                    //ret = 0; //TODO: check return values?
                     break;
                 }
             }
@@ -373,12 +375,11 @@ public class MyCode extends CodeV3 {
             access.setSubjectCommonName(IETFUtils.valueToString(name.getRDNs(BCStyle.CN)[0].getFirst().getValue()));
         access.setSubjectSignatureAlgorithm(certificate.getSigAlgName());
         access.setPublicKeySignatureAlgorithm(certificate.getSigAlgName());
-        if(certificate.getPublicKey() instanceof RSAPublicKeyImpl){
-            access.setPublicKeyParameter(""+
-                    ((RSAPublicKeyImpl)certificate.getPublicKey()).getModulus().bitLength()
+        if (certificate.getPublicKey() instanceof RSAPublicKeyImpl) {
+            access.setPublicKeyParameter("" +
+                    ((RSAPublicKeyImpl) certificate.getPublicKey()).getModulus().bitLength()
             );
-        }
-        else {
+        } else {
             access.setPublicKeyParameter("" +
                     ((org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey) certificate.getPublicKey()).getModulus().bitLength()
             );
@@ -407,7 +408,7 @@ public class MyCode extends CodeV3 {
         //========GET INHIBIT ANY POLICY=========
         ASN1Primitive prim = null;
         String decoded = null;
-        byte[] tt = certificate.getExtensionValue("2.5.29.54");
+        byte[] tt = certificate.getExtensionValue("2.5.29.54"); //OID standard for this extension
         if (tt != null) {
             try {
                 prim = JcaX509ExtensionUtils.parseExtensionValue(tt);
@@ -560,12 +561,12 @@ public class MyCode extends CodeV3 {
             addToGeneratorExtensions(extGen, cert);
             p10Builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
             String algorithm = cert.getSigAlgName();
-            signer = new JcaContentSignerBuilder(algorithm).build(privateKey); //CHECK ALG! => SHA256xxx?
+            signer = new JcaContentSignerBuilder(algorithm).build(privateKey);
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
-        certificationRequest = p10Builder.build(signer); //PUBLIC STATIC?
+        certificationRequest = p10Builder.build(signer);
 
         StringWriter strWriter = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(strWriter);
@@ -658,7 +659,7 @@ public class MyCode extends CodeV3 {
             Enumeration<String> aliases = keyStore.aliases();
             while (true) {
                 String selectedAlias;
-                if(aliases.hasMoreElements())
+                if (aliases.hasMoreElements())
                     selectedAlias = aliases.nextElement();
                 else break;
                 Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
@@ -697,7 +698,6 @@ public class MyCode extends CodeV3 {
                     Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
                     X509Certificate certificate = (X509Certificate) chain[0];
                     if ("RSA".equals(certificate.getPublicKey().getAlgorithm())) {
-                        //TODO: DEBUG
                         sun.security.rsa.RSAPublicKeyImpl rs = (RSAPublicKeyImpl) certificate.getPublicKey();
                         //BCRSAPublicKey rs = (BCRSAPublicKey) certificate.getPublicKey();
                         ret = rs.getModulus().bitLength();
@@ -760,7 +760,7 @@ public class MyCode extends CodeV3 {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-        } */catch (KeyStoreException e) {
+        } */ catch (KeyStoreException e) {
             e.printStackTrace();
         } catch (CertificateException e) {
             e.printStackTrace();
@@ -799,7 +799,7 @@ public class MyCode extends CodeV3 {
         } catch (CertificateEncodingException e) {
             e.printStackTrace();
         }
-        return Functions.writeCertificateToFile(file, encoded, derCer,encoding);
+        return Functions.writeCertificateToFile(file, encoded, derCer, encoding);
     }
 
     /**
@@ -839,17 +839,7 @@ public class MyCode extends CodeV3 {
 
             X509Certificate signedCert = new JcaX509CertificateConverter()
                     .getCertificate(certificateBuilder.build(signer));
-            //TODO: maybe add to certificate store?
-            //TODO: add chain[1] etf
-            //TODO: add subject privateKey to cert
 
-            //=========add cert
-            //String fileName = ALIAS_TO_BE_SIGNED + "-signed";
-            //access.addKeypair(ALIAS_TO_BE_SIGNED); //NOT NEEDED now
-            //TEST DEBUG START
-//            Certificate[] certs = new Certificate[2];
-//            certs[0] = signedCert;
-//            certs[1] = keyStore.engineGetCertificateChain(issuer)[0];
             PrivateKey privateKey = getPrivateKeyCA(ALIAS_TO_BE_SIGNED);
 
 
@@ -864,9 +854,6 @@ public class MyCode extends CodeV3 {
             keyStore.setKeyEntry(ALIAS_TO_BE_SIGNED, privateKey, keyStorePassword.toCharArray(), newChain);
 
             saveLocalKeyStore();
-            //keyStore.engineSetKeyEntry(fileName,privateKey,keyStorePassword.toCharArray(),certs);
-            //TEST DEBUG END
-            //keyStore.setCertificateEntry(fileName, signedCert);
             //loadLocalKeystore();
             //======
         } catch (Exception e) {
