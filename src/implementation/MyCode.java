@@ -280,9 +280,9 @@ public class MyCode extends CodeV3 {
             while (true) {
                 String selectedAlias;
                 if(aliases.hasMoreElements())
-                    selectedAlias = aliases.nextElement().toLowerCase();
+                    selectedAlias = aliases.nextElement();
                 else break;
-                if (selectedAlias.equals(keypair_name.toLowerCase())) {
+                if (selectedAlias.toLowerCase().equals(keypair_name.toLowerCase())) {
                     Certificate[] chain = keyStore.getCertificateChain(selectedAlias);
                     //==
                     X509Certificate certificate;
@@ -750,6 +750,7 @@ public class MyCode extends CodeV3 {
             keyStore.engineSetKeyEntry(keypair_name, key, keyStorePassword.toCharArray(), chain);
 */
             saveLocalKeyStore();
+            loadLocalKeystore();
             return true;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -814,7 +815,7 @@ public class MyCode extends CodeV3 {
     @Override
     public boolean signCertificate(String issuer, String algorithm) {
         try {
-            Certificate[] chain = keyStore.getCertificateChain(ALIAS_TO_BE_SIGNED);
+            Certificate[] chain = keyStore.getCertificateChain(ALIAS_TO_BE_SIGNED.toLowerCase());
             X509Certificate cert = (X509Certificate) chain[0];
             PrivateKey CAPrivateKey = getPrivateKeyCA(issuer); //GET ISSUER PRIVATE KEY
             BigInteger serial = cert.getSerialNumber();
