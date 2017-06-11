@@ -18,6 +18,14 @@ Main Class: X509_2017->code->X509
 
 # FAQ:
 
+## [ZP-rosko] mozda nekom pomogne sad u poslednjem momentu :D
+
+pri pokretanju ssl testa, dobijao sam javax.net.ssl.SSLHandshakeException: Received fatal alert: certificate_unknown
+nemojte da koristite X509V3CertificateGenerator.setIssuerDN(X509Name) nego koristite
+
+X509V3CertificateGenerator.setIssuerDN(X500Principal)
+online dekoderi sertifikati citaju oba sertifikata kako treba, ali se ssl test nesto izbaguje
+
 1. ЗП Је ли ко користио
 JcaContentSignerBuilder да потпише сертификтате и је ли му ради за RIPEMDxxxwithRSA?
 
