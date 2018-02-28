@@ -16,9 +16,10 @@ Main Class: X509_2017->code->X509
 - Used library: http://rcardon.free.fr/websign/download/api-x509-ext/be/cardon/asn1/x509/extensions/InhibitAnyPolicy.html
 - MUP RS http://ca.mup.gov.rs/MUPCACPSv2.pdf | http://ca.mup.gov.rs/download.html
 
-# FAQ:
+# FAQ (u grupi često postavljana pitanja):
+*Pitanja su samo kopirana sa FB grupe sa sve odgovorima*
 
-## [ZP-rosko] mozda nekom pomogne sad u poslednjem momentu :D
+[ZP-rosko] mozda nekom pomogne sad u poslednjem momentu :D
 
 pri pokretanju ssl testa, dobijao sam javax.net.ssl.SSLHandshakeException: Received fatal alert: certificate_unknown
 nemojte da koristite X509V3CertificateGenerator.setIssuerDN(X509Name) nego koristite
@@ -26,7 +27,7 @@ nemojte da koristite X509V3CertificateGenerator.setIssuerDN(X509Name) nego koris
 X509V3CertificateGenerator.setIssuerDN(X500Principal)
 online dekoderi sertifikati citaju oba sertifikata kako treba, ali se ssl test nesto izbaguje
 
-1. ЗП Је ли ко користио
+**1.** ЗП Је ли ко користио
 JcaContentSignerBuilder да потпише сертификтате и је ли му ради за RIPEMDxxxwithRSA?
 
 Ђорђе Живановић Jovan Djukicево решење:
@@ -46,17 +47,17 @@ Nikola Miljkovic u odredjenim funkcijama ima paramatera za provider gde se kao s
 
 Ђорђе Живановић Ј**и га сад. 😂 Ово ти решава све те двосмислене проблеме. Јер сигурно још негде ће се појавити.
 
-2. ЗП enabledKeyIdentifiers, чему служи ?
+**2.** ЗП enabledKeyIdentifiers, чему служи ?
 Dohvata vrednost onog checkboxa iz GUI-ja za key identifiers, ako je to ono sto mislim, proveri.
 Pa sluzi da odlucis da li da dodas tu ekstenziju ili ne. Dodajes samo ako je true.
 
-3. [ZP projekat] Je l' neko probao issuer alternative name da doda? I je l' prolazi javni test kad to doda?
+**3.** [ZP projekat] Je l' neko probao issuer alternative name da doda? I je l' prolazi javni test kad to doda?
 
 Aleksa Mitrovic: Meni baca error: Certificate contains unsupported critical extensions: [2.5.29.18] - sto je issuer alternative name...
 
 Čukanović resio - ne podrzava ako stavite critical na true...
 
-4. [ZP] Da li je neko uspeo da upise x400Address u Subject/issuer alternative names?
+**4.** [ZP] Da li je neko uspeo da upise x400Address u Subject/issuer alternative names?
 
 Mihailo Petric Da li si probao gn = new GeneralName(GeneralName.x400Address, new X500Name("C=....,ST=..."))
 napravis niz GeneralNames[] i to prosledis addExtension kao ASN1Encodable ?
@@ -65,7 +66,7 @@ Stevan Ognjanovic Nisam to probao, nesto drugo jesam pa je puklo u konstruktoru.
 
 Mihailo Petric za othername mi je nesto cudno pisalo u sertifikatu. Koristio sam DERIA5String(String). Ja i dalje nisam siguran sta sve moze da se prosledi kod subject/issuer name, ali ono sto sam ja gledao u raznim sertifikatima po netu to je uvek dns.
 
-5. ZP projekat za EC algoritam - kako se implementira Set i Curve sa sve one opcije sa GUI-ja?
+**5.** ZP projekat za EC algoritam - kako se implementira Set i Curve sa sve one opcije sa GUI-ja?
 
 Branislava Ivković ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(access.getPublicKeyECCurve());
 
@@ -77,7 +78,7 @@ Milica Stanković Hvala puno :)
 
 Branislava Ivković Set sluzi samo da promeni sta se nalazi u drop down meniju za curve.
 
-6. ЗП Је ли зна неко како да се дохвати issuer alterantive name?
+**6.** ЗП Је ли зна неко како да се дохвати issuer alterantive name?
 Пошто ова метода getAlternativeName увек враћа низ стрингова величине 0.
 getAlternativeName(6)
 
