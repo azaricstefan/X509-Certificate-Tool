@@ -1,13 +1,15 @@
 # ZP projekat 
 
-### Podesiti RUNTIME configuration: 
+Description: GUI application which supports creating new X.509v3 certificates with specified extensions, exporting them, importing new ones and signing them.
+
+### Setup of the RUNTIME configuration: 
 Program arguments: config.txt
 Main Class: X509_2017->code->X509
 
-# Korisni linkovi:
-- Dokumentacija neka siromasna https://bouncycastle.org/docs/pkixdocs1.5on/index.html
+# Useful links:
+- Documentation for BouncyCastle https://bouncycastle.org/docs/pkixdocs1.5on/index.html
 - https://www.mayrhofer.eu.org/create-x509-certs-in-java
-- Neki projekat https://github.com/mitap94/ir3-zp-projekat/blob/master/zp-projekat/src/crypto/utils/BouncyCastleX509Builder.java
+- Other repo with similar project: https://github.com/mitap94/ir3-zp-projekat/blob/master/zp-projekat/src/crypto/utils/BouncyCastleX509Builder.java
 - http://www.bouncycastle.org/wiki/display/JA1/BC+Version+2+APIs
 - Java code examples for java.security.cert.X509Certificate http://www.programcreek.com/java-api-examples/java.security.cert.X509Certificate
 - OID's http://www.alvestrand.no/objectid/2.5.29.html
