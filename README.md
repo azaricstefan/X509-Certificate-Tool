@@ -1,4 +1,4 @@
-# ZP projekat 
+# X509-Certificate-Tool
 
 Description: GUI application which supports creating new X.509v3 certificates with specified extensions, exporting them, importing new ones and signing them.
 
